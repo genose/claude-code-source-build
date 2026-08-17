@@ -9,6 +9,13 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const versionRoot = path.resolve(__dirname, '..');
 
+// Prefer the baseline (no-AVX2) bun binary when available, then fall back to auto-selected local bun
+const baselinePkgName = { linux: 'bun-linux-x64-baseline', darwin: 'bun-darwin-x64-baseline', win32: 'bun-windows-x64-baseline' }[process.platform];
+const baselineBunExe = process.platform === 'win32' ? 'bun.exe' : 'bun';
+const baselineBun = baselinePkgName ? path.join(versionRoot, 'node_modules', '@oven', baselinePkgName, baselineBunExe) : null;
+const localBun = path.join(versionRoot, 'node_modules', '.bin', 'bun');
+const bunBin = (baselineBun && fs.existsSync(baselineBun)) ? baselineBun : fs.existsSync(localBun) ? localBun : 'bun';
+
 const sourceRoot = path.join(versionRoot, 'source');
 const installedPackageJson = path.join(sourceRoot, 'package.json');
 const installedSourceMap = path.join(sourceRoot, 'cli.js.map');
@@ -184,6 +191,12 @@ const enabledBundleFeatures = new Set([
 main();
 
 function main() {
+  const bunCheck = spawnSync(bunBin, ['--version'], { encoding: 'utf8' });
+  if (bunCheck.error?.code === 'ENOENT') {
+    console.error('Error: bun not found. Run "npm install" to install it locally, or visit https://bun.sh');
+    process.exit(1);
+  }
+
   for (let attempt = 0; attempt < 6; attempt += 1) {
     prepareWorkspace(getOverlayPackages());
     ensureOverlayDependencies(getOverlayPackages());
@@ -197,8 +210,8 @@ function main() {
 
     const changed = reconcileBuildErrors(buildResult.stderr);
     if (!changed) {
-      process.stdout.write(buildResult.stdout);
-      process.stderr.write(buildResult.stderr);
+      if (buildResult.stdout != null) process.stdout.write(buildResult.stdout);
+      if (buildResult.stderr != null) process.stderr.write(buildResult.stderr);
       process.exit(buildResult.status ?? 1);
     }
   }
@@ -629,7 +642,7 @@ function runBunBuild() {
     bunArgs.push('--minify');
   }
 
-  return spawnSync('bun', bunArgs, {
+  return spawnSync(bunBin, bunArgs, {
     cwd: workspaceRoot,
     encoding: 'utf8',
     env: {
@@ -691,6 +704,7 @@ function finalizeBuild() {
 
 function reconcileBuildErrors(stderrText) {
   let changed = false;
+  if (!stderrText) return changed;
 
   for (const match of stderrText.matchAll(
     /error: Could not resolve: "([^"]+)"[\s\S]*?\n\s+at ([^\n:]+):\d+:\d+/g,

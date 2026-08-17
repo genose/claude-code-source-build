@@ -3,6 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "bun ./scripts/build-cli.mjs"
+    "build": "node ./scripts/build-cli.mjs"
+  },
+  "devDependencies": {
+    "bun": "latest"
+  },
+  "optionalDependencies": {
+    "@oven/bun-linux-x64-baseline": "latest",
+    "@oven/bun-darwin-x64-baseline": "latest",
+    "@oven/bun-windows-x64-baseline": "latest"
   }
 }
