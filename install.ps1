@@ -68,3 +68,13 @@ if ($userPath -notlike "*$BinDir*") {
     Write-Host "    Or run the above in PowerShell to set it permanently."
     Write-Host ""
 }
+
+# Verify
+Write-Host "==> Verifying..."
+try {
+    & "$BinDir\$CMD.cmd" --version
+    Write-Host ""
+    Write-Host "    claudius is ready."
+} catch {
+    Write-Warning "Could not verify claudius. Check that $BinDir is in your PATH."
+}

@@ -80,3 +80,12 @@ if ! echo "$PATH" | grep -q "$BIN_DIR"; then
   echo "    Add this line to your ~/.bashrc or ~/.zshrc"
   echo ""
 fi
+
+# Verify
+echo "==> Verifying..."
+if "$BIN_DIR/$CMD" --version 2>/dev/null; then
+  echo ""
+  echo "    claudius is ready."
+else
+  echo "    Warning: could not verify claudius. Check that $BIN_DIR is in your PATH." >&2
+fi
