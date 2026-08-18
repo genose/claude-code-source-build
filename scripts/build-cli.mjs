@@ -161,6 +161,10 @@ const pinnedOverlaySourceMapPaths = new Set([
 ]);
 
 const args = parseArgs(process.argv.slice(2));
+if (!fs.existsSync(installedPackageJson)) {
+  console.error(`Error: source/package.json not found at ${installedPackageJson}\nEnsure the source/ directory is present and complete.`);
+  process.exit(1);
+}
 const packageJson = JSON.parse(fs.readFileSync(installedPackageJson, 'utf8'));
 const outputPath = path.resolve(args.outfile ?? defaultOutfile);
 const tempOutputPath = `${outputPath}.tmp`;
@@ -227,6 +231,10 @@ function getOverlayPackages() {
 function prepareWorkspace(overlayPackages) {
   const overlaySet = new Set(overlayPackages);
   const marker = readJsonIfExists(markerPath);
+  if (!fs.existsSync(installedSourceMap)) {
+    console.error(`Error: source/cli.js.map not found at ${installedSourceMap}\nEnsure the source/ directory is present and complete.`);
+    process.exit(1);
+  }
   const currentMapStat = fs.statSync(installedSourceMap);
 
   if (
