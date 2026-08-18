@@ -10,25 +10,35 @@ See: [anthropics/claude-code#33153](https://github.com/anthropics/claude-code/is
 
 ## Install
 
-One-liner — clones, builds, and installs the `claudius` command to `~/.local/bin`:
+Clones, builds, and installs the `claudius` command. Requires **Node.js >= 20** and **git**.
 
+**macOS / Linux:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/genose/claude-code-source-build-community-edition-noAVX-foroldtimer/noavx_esbuild/install.sh | bash
 ```
 
-Or clone and run manually:
-
-```bash
-git clone --branch noavx_esbuild https://github.com/genose/claude-code-source-build-community-edition-noAVX-foroldtimer.git ~/.claudius
-bash ~/.claudius/install.sh
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/genose/claude-code-source-build-community-edition-noAVX-foroldtimer/noavx_esbuild/install.ps1 | iex
 ```
 
 After install, run `claudius` instead of `claude`.
 
-To customize the install location:
+Default install locations:
 
+| Platform | Install dir | Command |
+|----------|-------------|---------|
+| macOS | `~/.claudius` | `/usr/local/bin/claudius` |
+| Linux | `~/.claudius` | `~/.local/bin/claudius` |
+| Windows | `%USERPROFILE%\.claudius` | `%USERPROFILE%\.local\bin\claudius.cmd` |
+
+To customize:
 ```bash
+# macOS / Linux
 CLAUDIUS_INSTALL_DIR=~/tools/claudius CLAUDIUS_BIN_DIR=~/bin bash install.sh
+
+# Windows
+$env:CLAUDIUS_INSTALL_DIR="C:\tools\claudius"; $env:CLAUDIUS_BIN_DIR="C:\tools\bin"; irm ... | iex
 ```
 
 ## Prerequisites
