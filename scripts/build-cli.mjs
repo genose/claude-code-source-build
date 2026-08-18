@@ -157,6 +157,14 @@ const pinnedOverlaySourceMapPaths = new Set([
   'node_modules/react-reconciler/cjs/react-reconciler-constants.production.js',
 ]);
 
+let cachedSourceMap = null;
+function getSourceMap() {
+  if (!cachedSourceMap) {
+    cachedSourceMap = JSON.parse(fs.readFileSync(installedSourceMap, 'utf8'));
+  }
+  return cachedSourceMap;
+}
+
 const args = parseArgs(process.argv.slice(2));
 if (!fs.existsSync(installedPackageJson)) {
   console.error(`Error: source/package.json not found at ${installedPackageJson}\nEnsure the source/ directory is present and complete.`);
@@ -248,7 +256,7 @@ function prepareWorkspace(overlayPackages) {
     return;
   }
 
-  const sourceMap = JSON.parse(fs.readFileSync(installedSourceMap, 'utf8'));
+  const sourceMap = getSourceMap();
   const keepPaths = new Set();
   fs.mkdirSync(workspaceRoot, { recursive: true });
 
@@ -1526,7 +1534,7 @@ function parseNamedImports(clause) {
 }
 
 function restoreSourceMapFiles(overlaySet) {
-  const sourceMap = JSON.parse(fs.readFileSync(installedSourceMap, 'utf8'));
+  const sourceMap = getSourceMap();
   for (let index = 0; index < sourceMap.sources.length; index += 1) {
     const source = sourceMap.sources[index];
     const contents = sourceMap.sourcesContent[index];
@@ -1548,7 +1556,7 @@ function restoreSourceMapFiles(overlaySet) {
 }
 
 function restorePinnedOverlaySourceMapFiles(keepPaths) {
-  const sourceMap = JSON.parse(fs.readFileSync(installedSourceMap, 'utf8'));
+  const sourceMap = getSourceMap();
   for (let index = 0; index < sourceMap.sources.length; index += 1) {
     const source = sourceMap.sources[index];
     const contents = sourceMap.sourcesContent[index];
