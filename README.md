@@ -41,6 +41,28 @@ CLAUDIUS_INSTALL_DIR=~/tools/claudius CLAUDIUS_BIN_DIR=~/bin bash install.sh
 $env:CLAUDIUS_INSTALL_DIR="C:\tools\claudius"; $env:CLAUDIUS_BIN_DIR="C:\tools\bin"; irm ... | iex
 ```
 
+## Update / Reinstall
+
+Re-run the same install command — it detects an existing install, pulls the latest commits, rebuilds, and updates the wrapper:
+
+**macOS / Linux:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/genose/claude-code-source-build-community-edition-noAVX-foroldtimer/noavx_esbuild/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/genose/claude-code-source-build-community-edition-noAVX-foroldtimer/noavx_esbuild/install.ps1 | iex
+```
+
+Or if you already cloned locally:
+```bash
+cd ~/.claudius   # or your custom CLAUDIUS_INSTALL_DIR
+git pull
+npm install
+npm run build
+```
+
 ## Prerequisites
 
 - Node.js >= 20
