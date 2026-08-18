@@ -1,4 +1,5 @@
 # Claude Code 2.1.88 — Custom Build
+# Claude Code CLI — Custom Build - "Community edition - no AVX"
 
 ![](<img/2026-03-31 14-58-01-combined.gif>)
 
