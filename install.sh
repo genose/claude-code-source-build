@@ -59,7 +59,7 @@ npm install --silent
 
 # Build
 echo "==> Building..."
-node scripts/build-cli.mjs
+npm run build
 
 # Install wrapper
 mkdir -p "$BIN_DIR"

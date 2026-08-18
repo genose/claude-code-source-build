@@ -28,7 +28,7 @@ Default install locations:
 
 | Platform | Install dir | Command |
 |----------|-------------|---------|
-| macOS | `~/.claudius` | `/usr/local/bin/claudius` |
+| macOS | `~/.claudius` | `/usr/local/bin/claudius` (if writable, else `~/.local/bin/claudius`) |
 | Linux | `~/.claudius` | `~/.local/bin/claudius` |
 | Windows | `%USERPROFILE%\.claudius` | `%USERPROFILE%\.local\bin\claudius.cmd` |
 
@@ -59,7 +59,8 @@ cd claude-code-source-build-community-edition-noAVX-foroldtimer
 npm install
 
 # 3. Build (production, minified)
-node scripts/build-cli.mjs
+npm run build
+# equivalent: node scripts/build-cli.mjs
 
 # Development build (unminified, faster)
 node scripts/build-cli.mjs --no-minify
@@ -71,6 +72,17 @@ node scripts/build-cli.mjs --outfile /path/to/cli.js
 Output: `dist/cli.js` (entry point) + `dist/cli.bundle/` (bundle directory).
 
 The first build auto-installs ~80 overlay npm packages into `.cache/workspace/`. Subsequent builds skip this step automatically.
+
+> **Note:** The build parses a 57 MB source map (`source/cli.js.map`) once and caches it in memory for the duration of the build. On machines with < 2 GB of free RAM, Node.js may run out of heap. If you see an OOM crash, increase the heap limit:
+> ```bash
+> NODE_OPTIONS=--max-old-space-size=4096 npm run build
+> ```
+
+### Verify
+
+```bash
+node dist/cli.js --version
+```
 
 ## Run
 
@@ -94,7 +106,7 @@ node dist/cli.js
 
 ```bash
 rm -f .cache/workspace/.prepared.json
-node scripts/build-cli.mjs
+npm run build
 ```
 
 ## Feature flags

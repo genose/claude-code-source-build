@@ -49,7 +49,7 @@ npm install --silent
 
 # Build
 Write-Host "==> Building..."
-node scripts/build-cli.mjs
+npm run build
 
 # Install wrapper
 New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
