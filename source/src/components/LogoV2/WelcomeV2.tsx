@@ -15,7 +15,7 @@ export function WelcomeV2() {
     } else {
       t0 = $[1];
     }
-    return t0;
+    return <Box flexDirection="column">{t0}<Text dimColor={true}>Community Edition no-AVX · Maintained by genose.org</Text></Box>;
   }
   if (["light", "light-daltonized", "light-ansi"].includes(theme)) {
     let t0;
@@ -103,7 +103,7 @@ export function WelcomeV2() {
     } else {
       t15 = $[17];
     }
-    return t15;
+    return <Box flexDirection="column">{t15}<Text dimColor={true}>Community Edition no-AVX · Maintained by genose.org</Text></Box>;
   }
   let t0;
   let t1;
@@ -194,7 +194,7 @@ export function WelcomeV2() {
   } else {
     t16 = $[34];
   }
-  return t16;
+  return <Box flexDirection="column">{t16}<Text dimColor={true}>Community Edition no-AVX · Maintained by genose.org</Text></Box>;
 }
 type AppleTerminalWelcomeV2Props = {
   theme: string;
