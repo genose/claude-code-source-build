@@ -52,9 +52,13 @@ else
   git clone --branch "$BRANCH" --depth 1 "$REPO" "$INSTALL_DIR"
 fi
 
+# Install dependencies (esbuild etc.)
+echo "==> Installing dependencies..."
+cd "$INSTALL_DIR"
+npm install --silent
+
 # Build
 echo "==> Building..."
-cd "$INSTALL_DIR"
 node scripts/build-cli.mjs
 
 # Install wrapper

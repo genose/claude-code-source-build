@@ -42,9 +42,13 @@ if (Test-Path "$InstallDir\.git") {
     git clone --branch $BRANCH --depth 1 $REPO $InstallDir
 }
 
+# Install dependencies (esbuild etc.)
+Write-Host "==> Installing dependencies..."
+Set-Location $InstallDir
+npm install --silent
+
 # Build
 Write-Host "==> Building..."
-Set-Location $InstallDir
 node scripts/build-cli.mjs
 
 # Install wrapper
