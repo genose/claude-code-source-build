@@ -9,12 +9,9 @@ import { fileURLToPath } from 'node:url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const versionRoot = path.resolve(__dirname, '..');
 
-// Prefer the baseline (no-AVX2) bun binary when available, then fall back to auto-selected local bun
-const baselinePkgName = { linux: 'bun-linux-x64-baseline', darwin: 'bun-darwin-x64-baseline', win32: 'bun-windows-x64-baseline' }[process.platform];
-const baselineBunExe = process.platform === 'win32' ? 'bun.exe' : 'bun';
-const baselineBun = baselinePkgName ? path.join(versionRoot, 'node_modules', '@oven', baselinePkgName, baselineBunExe) : null;
-const localBun = path.join(versionRoot, 'node_modules', '.bin', 'bun');
-const bunBin = (baselineBun && fs.existsSync(baselineBun)) ? baselineBun : fs.existsSync(localBun) ? localBun : 'bun';
+// esbuild is invoked via the JS API runner (not the CLI binary) for full plugin support
+const esbuildRunner = path.join(__dirname, 'esbuild-runner.mjs');
+const esbuildBin = process.execPath; // node
 
 const sourceRoot = path.join(versionRoot, 'source');
 const installedPackageJson = path.join(sourceRoot, 'package.json');
@@ -195,9 +192,13 @@ const enabledBundleFeatures = new Set([
 main();
 
 function main() {
-  const bunCheck = spawnSync(bunBin, ['--version'], { encoding: 'utf8' });
-  if (bunCheck.error?.code === 'ENOENT') {
-    console.error('Error: bun not found. Run "npm install" to install it locally, or visit https://bun.sh');
+  if (!fs.existsSync(esbuildRunner)) {
+    console.error(`Error: esbuild runner not found at ${esbuildRunner}`);
+    process.exit(1);
+  }
+  const esbuildPkg = path.join(versionRoot, 'node_modules', 'esbuild');
+  if (!fs.existsSync(esbuildPkg)) {
+    console.error('Error: esbuild not found. Run "npm install" to install it locally.');
     process.exit(1);
   }
 
@@ -206,13 +207,14 @@ function main() {
     ensureOverlayDependencies(getOverlayPackages());
     generateWorkspaceAugmentations();
 
-    const buildResult = runBunBuild();
+    const buildResult = runEsbuild();
     if (buildResult.status === 0) {
       finalizeBuild();
       return;
     }
 
-    const changed = reconcileBuildErrors(buildResult.stderr);
+    // esbuild writes all output (errors + warnings) to stderr
+    const changed = reconcileBuildErrors(buildResult.stderr ?? buildResult.stdout);
     if (!changed) {
       if (buildResult.stdout != null) process.stdout.write(buildResult.stdout);
       if (buildResult.stderr != null) process.stderr.write(buildResult.stderr);
@@ -361,6 +363,41 @@ function generateWorkspaceAugmentations() {
   ensureUnavailablePackageEntries();
   patchMissingExports();
   patchFeatureFlags();
+  ensureCjsPackageJsons();
+}
+
+/**
+ * Create minimal package.json files for node_modules packages that lack one.
+ * Without their own package.json, esbuild falls back to the workspace
+ * package.json (type:module) and treats all their .js files as ESM, breaking
+ * CJS interop (no default export, callable exports become non-callable via D()).
+ */
+function ensureCjsPackageJsons() {
+  const nmRoot = path.join(workspaceRoot, 'node_modules');
+  if (!isDirectory(nmRoot)) return;
+
+  for (const entry of fs.readdirSync(nmRoot, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    const pkgDir = path.join(nmRoot, entry.name);
+
+    if (entry.name.startsWith('@')) {
+      // Scoped: walk one level deeper
+      for (const scoped of fs.readdirSync(pkgDir, { withFileTypes: true })) {
+        if (!scoped.isDirectory()) continue;
+        ensurePkgJson(path.join(pkgDir, scoped.name), `${entry.name}/${scoped.name}`);
+      }
+    } else {
+      ensurePkgJson(pkgDir, entry.name);
+    }
+  }
+}
+
+function ensurePkgJson(pkgDir, pkgName) {
+  const pkgJsonPath = path.join(pkgDir, 'package.json');
+  if (fs.existsSync(pkgJsonPath)) return; // already has one
+  // Write a minimal CJS package.json (no "type" field = commonjs by default)
+  const content = JSON.stringify({ name: pkgName }, null, 2) + '\n';
+  fs.writeFileSync(pkgJsonPath, content, 'utf8');
 }
 
 /**
@@ -594,7 +631,7 @@ function ensureUnavailablePackageEntries() {
 
 function patchMissingExports() {
   // Some exports are conditionally defined under feature flags we haven't enabled.
-  // Add no-op stubs for them so bun can resolve the imports.
+  // Add no-op stubs for them so esbuild can resolve the imports.
   const patches = [
     ['src/bootstrap/state.ts', 'export function isReplBridgeActive() { return false; }'],
   ];
@@ -612,7 +649,7 @@ function patchMissingExports() {
 
 function patchFeatureFlags() {
   const featureShim =
-    `const feature = (flag) => (${JSON.stringify([...enabledBundleFeatures])}).includes(flag);\n`;
+    `function feature(flag) { return (${JSON.stringify([...enabledBundleFeatures])}).includes(flag); }\n`;
   for (const filePath of walkFiles(path.join(workspaceRoot, 'src'))) {
     if (!sourceExtensions.includes(path.extname(filePath))) {
       continue;
@@ -630,27 +667,32 @@ function patchFeatureFlags() {
   }
 }
 
-function runBunBuild() {
+function runEsbuild() {
   removePath(tempOutputPath);
   removePath(tempBundlePath);
 
-  const bunArgs = [
-    'build',
+  // esbuild needs the output directory to exist before writing
+  const outfile = path.join(tempBundlePath, 'src', 'entrypoints', 'cli.js');
+  fs.mkdirSync(path.dirname(outfile), { recursive: true });
+
+  const esbuildArgs = [
+    esbuildRunner,
     path.join(workspaceRoot, 'src/entrypoints/cli.tsx'),
-    '--target=node',
+    '--platform=node',
     '--format=esm',
-    '--loader=.md:text',
-    '--loader=.txt:text',
-    '--env=USER_TYPE*',
-    '--env=CLAUDE_CODE_VERIFY_PLAN*',
-    `--root=${workspaceRoot}`,
-    `--outdir=${tempBundlePath}`,
+    '--target=node20',
+    '--loader:.md=text',
+    '--loader:.txt=text',
+    '--define:process.env.USER_TYPE="external"',
+    '--define:process.env.CLAUDE_CODE_VERIFY_PLAN="false"',
+    `--outfile=${outfile}`,
+    `--cwd=${workspaceRoot}`,
   ];
   if (!args.noMinify) {
-    bunArgs.push('--minify');
+    esbuildArgs.push('--minify');
   }
 
-  return spawnSync(bunBin, bunArgs, {
+  return spawnSync(esbuildBin, esbuildArgs, {
     cwd: workspaceRoot,
     encoding: 'utf8',
     env: {
@@ -714,8 +756,9 @@ function reconcileBuildErrors(stderrText) {
   let changed = false;
   if (!stderrText) return changed;
 
+  // esbuild format: Could not resolve "pkg"\n\n    path/file.ts:line:col:
   for (const match of stderrText.matchAll(
-    /error: Could not resolve: "([^"]+)"[\s\S]*?\n\s+at ([^\n:]+):\d+:\d+/g,
+    /Could not resolve "([^"]+)"[\s\S]*?\n\n?\s+([^\n:]+):\d+:\d+:/g,
   )) {
     const specifier = match[1];
     const importer = match[2];
@@ -733,7 +776,7 @@ function reconcileBuildErrors(stderrText) {
       }
       continue;
     }
-    if (specifier.startsWith('node:') || specifier.startsWith('bun:') || builtinSpecifiers.has(specifier)) {
+    if (specifier.startsWith('node:') || specifier.startsWith('bun:') || specifier.startsWith('esbuild:') || builtinSpecifiers.has(specifier)) {
       continue;
     }
 
@@ -747,8 +790,9 @@ function reconcileBuildErrors(stderrText) {
     }
   }
 
+  // esbuild format: No matching export in "file" for import "name"
   for (const match of stderrText.matchAll(
-    /error: No matching export in "([^"]+)" for import "([^"]+)"/g,
+    /No matching export in "([^"]+)" for import "([^"]+)"/g,
   )) {
     const targetPath = resolveBuildPath(match[1]);
     const exportName = match[2];
@@ -1573,10 +1617,31 @@ function copyRuntimeVendorAssets(bundleRoot) {
 }
 
 function removePath(targetPath) {
-  if (!fs.existsSync(targetPath)) {
-    return;
+  if (!fs.existsSync(targetPath)) return;
+  try {
+    fs.rmSync(targetPath, { recursive: true, force: true });
+  } catch (err) {
+    // Node.js 22 + macOS rimraf has a known issue with deeply nested node_modules.
+    // Fall back to bottom-up manual deletion.
+    if (err.code === 'ENOTEMPTY' || err.code === 'EEXIST') {
+      removePathDeep(targetPath);
+    } else {
+      throw err;
+    }
   }
-  fs.rmSync(targetPath, { recursive: true, force: true });
+}
+
+function removePathDeep(targetPath) {
+  if (!fs.existsSync(targetPath)) return;
+  const stat = fs.statSync(targetPath);
+  if (stat.isDirectory()) {
+    for (const entry of fs.readdirSync(targetPath)) {
+      removePathDeep(path.join(targetPath, entry));
+    }
+    fs.rmdirSync(targetPath);
+  } else {
+    fs.unlinkSync(targetPath);
+  }
 }
 
 function isDirectory(candidate) {
