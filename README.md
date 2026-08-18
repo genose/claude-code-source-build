@@ -8,6 +8,29 @@ Community-maintained source build of Claude Code with **Bun replaced by esbuild*
 
 See: [anthropics/claude-code#33153](https://github.com/anthropics/claude-code/issues/33153)
 
+## Install
+
+One-liner — clones, builds, and installs the `claudius` command to `~/.local/bin`:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/genose/claude-code-source-build-community-edition-noAVX-foroldtimer/noavx_esbuild/install.sh | bash
+```
+
+Or clone and run manually:
+
+```bash
+git clone --branch noavx_esbuild https://github.com/genose/claude-code-source-build-community-edition-noAVX-foroldtimer.git ~/.claudius
+bash ~/.claudius/install.sh
+```
+
+After install, run `claudius` instead of `claude`.
+
+To customize the install location:
+
+```bash
+CLAUDIUS_INSTALL_DIR=~/tools/claudius CLAUDIUS_BIN_DIR=~/bin bash install.sh
+```
+
 ## Prerequisites
 
 - Node.js >= 20
