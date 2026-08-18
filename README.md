@@ -44,24 +44,33 @@ $env:CLAUDIUS_INSTALL_DIR="C:\tools\claudius"; $env:CLAUDIUS_BIN_DIR="C:\tools\b
 ## Prerequisites
 
 - Node.js >= 20
-- npm (for overlay dependency install on first build)
+- git
+- npm
 
-## Build
+## Build from source
 
 ```bash
-# Production (minified)
+# 1. Clone
+git clone --branch noavx_esbuild \
+  https://github.com/genose/claude-code-source-build-community-edition-noAVX-foroldtimer.git
+cd claude-code-source-build-community-edition-noAVX-foroldtimer
+
+# 2. Install esbuild and dependencies
+npm install
+
+# 3. Build (production, minified)
 node scripts/build-cli.mjs
 
-# Development (unminified, faster builds)
+# Development build (unminified, faster)
 node scripts/build-cli.mjs --no-minify
 
 # Custom output path
-node scripts/build-cli.mjs --outfile /path/to/output/cli.js
+node scripts/build-cli.mjs --outfile /path/to/cli.js
 ```
 
-Output: `dist/cli.js` (wrapper) + `dist/cli.bundle/` (bundle).
+Output: `dist/cli.js` (entry point) + `dist/cli.bundle/` (bundle directory).
 
-First build runs `npm install` for ~80 overlay packages. Subsequent builds skip this.
+The first build auto-installs ~80 overlay npm packages into `.cache/workspace/`. Subsequent builds skip this step automatically.
 
 ## Run
 
@@ -69,18 +78,28 @@ First build runs `npm install` for ~80 overlay packages. Subsequent builds skip 
 node dist/cli.js
 ```
 
+Or use the installed `claudius` command if you ran `install.sh` / `install.ps1`.
+
 ### Computer Use (macOS)
 
-Computer use runs in-process automatically when the `CHICAGO_MCP` flag is enabled. The native addons are resolved from `prebuilds/` relative to the bundled package, or via env var overrides:
+Computer use activates automatically when the `CHICAGO_MCP` feature flag is enabled. Native addons are resolved from `source/native-addons/`. Override paths if needed:
 
 ```bash
-# Override native addon paths if the default resolution fails
 COMPUTER_USE_SWIFT_NODE_PATH="/path/to/computer-use-swift.node" \
 COMPUTER_USE_INPUT_NODE_PATH="/path/to/computer-use-input.node" \
 node dist/cli.js
 ```
 
-## Feature Flags
+## Clean rebuild
+
+```bash
+rm -f .cache/workspace/.prepared.json
+node scripts/build-cli.mjs
+```
+
+## Feature flags
+
+Toggle in `enabledBundleFeatures` inside `scripts/build-cli.mjs`. ~90 flags available — search `feature('` in source.
 
 | Flag | What it does |
 |------|-------------|
@@ -89,33 +108,26 @@ node dist/cli.js
 | `TRANSCRIPT_CLASSIFIER` | Transcript-level auto-mode classifier |
 | `CHICAGO_MCP` | Computer use via MCP (screenshot, click, type, etc.) |
 
-Toggle in `enabledBundleFeatures` inside `scripts/build-cli.mjs`. ~90 flags available — search `feature('` in source.
+## Native addons
 
-## Native Addons
-
-In `source/native-addons/`:
+Pre-built macOS binaries in `source/native-addons/`:
 
 | File | Purpose |
 |------|---------|
-| `computer-use-swift.node` | Screen capture, app management (macOS) |
-| `computer-use-input.node` | Mouse/keyboard input (macOS) |
+| `computer-use-swift.node` | Screen capture, app management |
+| `computer-use-input.node` | Mouse/keyboard input |
 | `image-processor.node` | Sharp image processing |
 | `audio-capture.node` | Audio capture |
-
-## Clean Rebuild
-
-```bash
-rm -f .cache/workspace/.prepared.json
-node scripts/build-cli.mjs --no-minify
-```
 
 ## Structure
 
 ```
+install.sh               — macOS/Linux installer (sets up claudius command)
+install.ps1              — Windows installer (sets up claudius command)
 scripts/build-cli.mjs    — Build script (source map extraction + esbuild bundling)
 scripts/esbuild-runner.mjs — esbuild plugins (CJS/ESM shims, exports fix)
 source/cli.js.map         — Original source map (4756 modules)
-source/native-addons/     — Pre-built .node binaries
+source/native-addons/     — Pre-built .node binaries (macOS)
 source/src/               — Overlay assets (.md skill files)
 .cache/workspace/         — Extracted workspace (generated, gitignored)
 dist/                     — Build output (generated)
