@@ -28,7 +28,7 @@ export function WelcomeV2() {
     let t7;
     let t8;
     if ($[2] === Symbol.for("react.memo_cache_sentinel")) {
-      t0 = <Text><Text color="claude">{"Welcome to Claude Code"} </Text><Text dimColor={true}>v{MACRO.VERSION} </Text></Text>;
+      t0 = <Text><Text color="claude">{"Welcome to Claude Code"} </Text><Text dimColor={true}>v{MACRO.VERSION} · Community Edition no-AVX </Text></Text>;
       t1 = <Text>{"\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026"}</Text>;
       t2 = <Text>{"                                                          "}</Text>;
       t3 = <Text>{"                                                          "}</Text>;
@@ -113,7 +113,7 @@ export function WelcomeV2() {
   let t5;
   let t6;
   if ($[18] === Symbol.for("react.memo_cache_sentinel")) {
-    t0 = <Text><Text color="claude">{"Welcome to Claude Code"} </Text><Text dimColor={true}>v{MACRO.VERSION} </Text></Text>;
+    t0 = <Text><Text color="claude">{"Welcome to Claude Code"} </Text><Text dimColor={true}>v{MACRO.VERSION} · Community Edition no-AVX </Text></Text>;
     t1 = <Text>{"\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026\u2026"}</Text>;
     t2 = <Text>{"                                                          "}</Text>;
     t3 = <Text>{"     *                                       \u2588\u2588\u2588\u2588\u2588\u2593\u2593\u2591     "}</Text>;
@@ -218,7 +218,7 @@ function AppleTerminalWelcomeV2(t0) {
     }
     let t2;
     if ($[2] === Symbol.for("react.memo_cache_sentinel")) {
-      t2 = <Text dimColor={true}>v{MACRO.VERSION} </Text>;
+      t2 = <Text dimColor={true}>v{MACRO.VERSION} · Community Edition no-AVX </Text>;
       $[2] = t2;
     } else {
       t2 = $[2];
@@ -329,7 +329,7 @@ function AppleTerminalWelcomeV2(t0) {
   }
   let t2;
   if ($[24] === Symbol.for("react.memo_cache_sentinel")) {
-    t2 = <Text dimColor={true}>v{MACRO.VERSION} </Text>;
+    t2 = <Text dimColor={true}>v{MACRO.VERSION} · Community Edition no-AVX </Text>;
     $[24] = t2;
   } else {
     t2 = $[24];
