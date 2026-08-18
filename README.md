@@ -1,13 +1,16 @@
-# Claude Code 2.1.88 — Custom Build
+# Claude Code — Community Edition (no-AVX / old-timer build)
 
 ![](<img/2026-03-31 14-58-01-combined.gif>)
 
 Rebuilt from source maps with real source preservation for `@ant/*` packages.
 
+Community-maintained source build of Claude Code with **Bun replaced by esbuild** — runs on CPUs without AVX/AVX2 (Intel Westmere/Nehalem, AMD pre-Bulldozer, Hyper-V/VirtualBox/KVM VMs, old-timer hardware).
+
+See: [anthropics/claude-code#33153](https://github.com/anthropics/claude-code/issues/33153)
+
 ## Prerequisites
 
 - Node.js >= 20
-- Bun >= 1.1
 - npm (for overlay dependency install on first build)
 
 ## Build
@@ -76,7 +79,8 @@ node scripts/build-cli.mjs --no-minify
 ## Structure
 
 ```
-scripts/build-cli.mjs    — Build script (source map extraction + bun bundling)
+scripts/build-cli.mjs    — Build script (source map extraction + esbuild bundling)
+scripts/esbuild-runner.mjs — esbuild plugins (CJS/ESM shims, exports fix)
 source/cli.js.map         — Original source map (4756 modules)
 source/native-addons/     — Pre-built .node binaries
 source/src/               — Overlay assets (.md skill files)
