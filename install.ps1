@@ -56,8 +56,20 @@ New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
 $wrapper = "$BinDir\$CMD.cmd"
 Set-Content -Path $wrapper -Value "@echo off`r`nnode `"$InstallDir\dist\cli.js`" %*"
 
+# Create claude.cmd -> claudius.cmd so VS Code / JetBrains extensions work without config changes.
+# Only created/updated if the target is absent or already points to our wrapper.
+$claudeWrapper = "$BinDir\claude.cmd"
+$ourContent = "@echo off`r`nnode `"$InstallDir\dist\cli.js`" %*"
+if (-not (Test-Path $claudeWrapper) -or (Get-Content $claudeWrapper -Raw) -eq $ourContent) {
+    Set-Content -Path $claudeWrapper -Value $ourContent
+    Write-Host "    Also created: $claudeWrapper (claude -> claudius)"
+} else {
+    Write-Host "    NOTE: $claudeWrapper already exists with different content — skipping."
+    Write-Host "          VS Code extensions may use the official claude binary on that path."
+}
+
 Write-Host ""
-Write-Host "==> Done! Run: $CMD"
+Write-Host "==> Done! Run: $CMD  (or: claude)"
 Write-Host ""
 
 # PATH hint

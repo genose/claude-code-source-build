@@ -128,12 +128,18 @@ node dist/cli.js
 
 The official Claude Code VS Code and JetBrains extensions internally invoke the `claude` CLI binary — which ships with **Bun**, and Bun requires AVX. On old-timer CPUs the extension will crash on startup.
 
-### Workaround
+### Automatic fix (install.sh / install.ps1)
 
-Point the extension to `claudius` instead of `claude`:
+The installer automatically creates a `claude` symlink (macOS/Linux) or `claude.cmd` wrapper (Windows) alongside `claudius` in the same bin directory. VS Code extensions find it with **no configuration change needed**.
 
-1. Open **Settings** → search for `claude code executable` (or `claudius`)
-2. Set **Claude Code › Executable Path** to the full path of `claudius`:
+- If a real `claude` binary already exists at that path, the installer skips it and prints a notice.
+
+### Manual fix
+
+If you need to point the extension explicitly:
+
+1. Open **Settings** → search for `claude code executable`
+2. Set **Claude Code › Executable Path** to:
 
 | Platform | Path |
 |----------|------|
@@ -141,7 +147,7 @@ Point the extension to `claudius` instead of `claude`:
 | macOS / Linux (fallback) | `~/.local/bin/claudius` |
 | Windows | `%USERPROFILE%\.local\bin\claudius.cmd` |
 
-Or add to your `settings.json`:
+Or in `settings.json`:
 ```json
 {
   "claude.executablePath": "/usr/local/bin/claudius"

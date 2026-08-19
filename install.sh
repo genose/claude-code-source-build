@@ -69,8 +69,18 @@ exec node "$INSTALL_DIR/dist/cli.js" "\$@"
 WRAPPER
 chmod +x "$BIN_DIR/$CMD"
 
+# Symlink 'claude' -> 'claudius' so VS Code / JetBrains extensions work without config changes.
+# Only created/updated if the target is absent or is already our symlink (never overwrites a real binary).
+if [ ! -e "$BIN_DIR/claude" ] || [ -L "$BIN_DIR/claude" ]; then
+  ln -sf "$CMD" "$BIN_DIR/claude"
+  echo "    Symlinked   : $BIN_DIR/claude -> $CMD"
+else
+  echo "    NOTE: $BIN_DIR/claude already exists and is not a symlink — skipping."
+  echo "          VS Code extensions may use the official claude binary on that path."
+fi
+
 echo ""
-echo "==> Done! Run: $CMD"
+echo "==> Done! Run: $CMD  (or: claude)"
 echo ""
 
 # PATH hint
